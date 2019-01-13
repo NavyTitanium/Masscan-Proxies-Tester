@@ -48,7 +48,7 @@ def fingerprint(website,TIMEOUT):
 		logging.error("Cannot fetch the website used to compare integrity!")
 		exit(0)
 
-def test_proxies(proxy,website,TIMEOUT):
+def test_proxies(proxy,website,TIMEOUT,ignore):
 	try:
 		req = urlrequest.Request(website)
 		req.set_proxy(proxy, 'http')
@@ -75,6 +75,9 @@ def test_proxies(proxy,website,TIMEOUT):
 		else:
 			return False,z
 	else:
+		if ignore:
+			return True, str(response.getcode())
+
 		m = hashlib.md5()
 		content=response.read()
 		m.update(content)
@@ -115,9 +118,9 @@ def load_and_remove_dupp(inq,proxies,output_good,output_bad):
 			inq.put(elem["ip"]+":"+elem["port"])
 	inq.put(sentinel)
 
-def process_inq(inq,website,timeout,output_good,output_bad):
+def process_inq(inq,website,timeout,output_good,output_bad,ignore):
 	for x in iter(inq.get, sentinel):
-		Status, Result = test_proxies(x,website,timeout)
+		Status, Result = test_proxies(x,website,timeout,ignore)
 		result=str(Result)
 		if(Status):
 			logging.warning(x + " -- " + result)
@@ -162,7 +165,9 @@ def main():
 	parser.add_option("-q", "--queue",
 					  default=10000,action="store", type="int", dest="QUEUE_SIZE",
 					  help="(Optional) Specify the size of the queue. Default: 10000")
-
+	parser.add_option("-i", "--ignore",
+					  default=False,action="store", dest="ignore",
+					  help="(Optional) Ignore integrity validation of pages returned")
 
 	(options, args) = parser.parse_args()
 
@@ -190,14 +195,18 @@ def main():
 	else:
 		logging.info("Default output file for good proxies selected: " + output_good)
 
-	MD5_SUM=fingerprint(options.website,options.timeout)
+	if not options.ignore:
+		MD5_SUM=fingerprint(options.website,options.timeout)
+	else:
+		logging.info("Skipping integrity validation")
+
 	inq = queue.Queue(maxsize=options.QUEUE_SIZE)
 	threading.Thread(target=load_and_remove_dupp, args=(inq,proxies,output_good,output_bad)).start()
 
 	logging.warning("Starting " + str(options.THREADS) + " threads for processing\n "
 														 "**********************************************")
 	for i in range(options.THREADS):
-		threading.Thread(target=process_inq, args=(inq,options.website,options.timeout,output_good,output_bad)).start()
+		threading.Thread(target=process_inq, args=(inq,options.website,options.timeout,output_good,output_bad,options.ignore)).start()
 
 if __name__ == '__main__':
 	main()
