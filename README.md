@@ -1,4 +1,4 @@
-Parse the output file of a [Masscan](https://github.com/robertdavidgraham/masscan) scan and try to connect to the IPs:Port as a proxy. 
+Parse the output file of a [Masscan](https://github.com/robertdavidgraham/masscan) scan and try to connect to a website with IPs:Port as the proxy. 
 The format expected is produced by Masscan with the **-oL** parameter. However, it should be easy to adjust the script to support other formats.
 
 ### Usage
@@ -30,8 +30,7 @@ Options:
                         (Optional) Specify the size of the queue. Default:
                         10000
   -i IGNORE, --ignore=IGNORE
-                        (Optional) Ignore integrity validation of pages
-                        returned
+                        (Optional) Ignore integrity validation of returned content
 ```
 
 ### Masscan usage example
@@ -61,8 +60,8 @@ Options:
 ...
 ```
 
-The script saves the results to files so another run of the script will be able to resume without testing the proxies twice. A diff is done between the Masscan results and the files loaded (**good.txt** and **bad.txt** by default).
+The script save the results to files so another run of the script will be able to resume without testing the proxies twice. A diff is done between the Masscan results and the files loaded (**good.txt** and **bad.txt** by default).
 
 ### Integrity validation
 
-By default, the content of the page returned by a proxy (when the connection returned status code 200) will be verified for integrity by comparing the MD5 hash of the content. 
+By default, the content of the page returned by a proxy (when the connection returned status code 200) will be verified for integrity by comparing the MD5 hash of the content. Specifying **-i** or **--ignore** override this validation.
