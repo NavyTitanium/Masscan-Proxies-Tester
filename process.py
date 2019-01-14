@@ -167,7 +167,7 @@ def main():
 					  help="(Optional) Specify the size of the queue. Default: 10000")
 	parser.add_option("-i", "--ignore",
 					  default=False,action="store", dest="ignore",
-					  help="(Optional) Ignore integrity validation of pages returned")
+					  help="(Optional) Ignore integrity validation of returned content")
 
 	(options, args) = parser.parse_args()
 
