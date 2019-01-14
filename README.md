@@ -61,5 +61,8 @@ Options:
 ...
 ```
 
-The script will be able to resume without testing the proxies already present in the outputted files (good.txt and bad.txt).
+The script saves the results to files so another run of the script will be able to resume without testing the proxies twice. A diff is done between the Masscan results and the files loaded (**good.txt** and **bad.txt** by default).
 
+### Integrity validation
+
+By default, the content of the page returned by a proxy (when the connection returned status code 200) will be verified for integrity by comparing the MD5 hash of the content. 
