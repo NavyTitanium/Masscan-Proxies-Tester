@@ -75,7 +75,7 @@ def test_proxies(proxy,website,TIMEOUT,ignore):
 		else:
 			return False,z
 	else:
-		if ignore:
+		if ignore is None:
 			return True, str(response.getcode())
 
 		m = hashlib.md5()
@@ -145,28 +145,28 @@ def main():
 	parser = OptionParser(usage="usage: %prog [options]")
 
 	parser.add_option("-m", "--masscan",
-					  default="/root/masscan/data/out.txt",action="store", type="string", dest="masscan_results",
+					  default="/root/masscan/data/out.txt",action="store", type="string", dest="masscan_results",nargs=1,
 					  help="Specify the file containing Masscan's results. Default: /root/masscan/data/out.txt")
 	parser.add_option("-b", "--bad",
-					  action="store", type="string", dest="output_bad",
+					  action="store", type="string", dest="output_bad",nargs=1,
 					  help="(Optional) Specify the output file for the proxies that aren't working. Default: "+ output_bad)
 	parser.add_option("-g", "--good",
-					  action="store", type="string", dest="output_good",
+					  action="store", type="string", dest="output_good",nargs=1,
 					  help="(Optional) Specify the output file for the working proxies. Default: " +output_good)
 	parser.add_option("-w", "--website",
-					  default="http://perdu.com",action="store", type="string", dest="website",
+					  default="http://perdu.com",action="store", type="string", dest="website",nargs=1,
 					  help="(Optional) Specify the website used to test the proxies. Default: http://perdu.com")
 	parser.add_option("-p", "--thread",
-					  default=10,action="store", type="int", dest="THREADS",
+					  default=10,action="store", type="int", dest="THREADS",nargs=1,
 					  help="(Optional) Specify the number of threads used to test the proxies. Default: 10")
 	parser.add_option("-t", "--timeout",
-					  default=6,action="store", type="int", dest="timeout",
+					  default=6,action="store", type="int", dest="timeout",nargs=1,
 					  help="(Optional) Specify the timeout period when testing a proxy. Default: 6")
 	parser.add_option("-q", "--queue",
-					  default=10000,action="store", type="int", dest="QUEUE_SIZE",
+					  default=10000,action="store", type="int", dest="QUEUE_SIZE",nargs=1,
 					  help="(Optional) Specify the size of the queue. Default: 10000")
 	parser.add_option("-i", "--ignore",
-					  default=False,action="store", dest="ignore",
+					  dest="ignore",nargs=0,
 					  help="(Optional) Ignore integrity validation of returned content")
 
 	(options, args) = parser.parse_args()
@@ -195,7 +195,7 @@ def main():
 	else:
 		logging.info("Default output file for good proxies selected: " + output_good)
 
-	if not options.ignore:
+	if options.ignore is None:
 		MD5_SUM=fingerprint(options.website,options.timeout)
 	else:
 		logging.info("Skipping integrity validation")
