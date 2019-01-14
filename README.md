@@ -1,4 +1,4 @@
-Parse the output file of a [Masscan](https://github.com/robertdavidgraham/masscan) scan and try to connect to a website with IPs:Port as the proxy. 
+Parse the output file of a [Masscan](https://github.com/robertdavidgraham/masscan) scan and try to connect to a website with IPs:Port as the proxy. The script fills a queue with the proxies and use multiple threads to consume it. 
 The format expected is produced by Masscan with the **-oL** parameter. However, it should be easy to adjust the script to support other formats.
 
 ### Usage
