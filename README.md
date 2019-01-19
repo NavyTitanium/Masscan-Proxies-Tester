@@ -6,13 +6,13 @@ To keep track of the proxies tested, the script use connects to a MySQL database
 ### Installation
 RHEL / CentOS:
 ```
-yum install unixODBC
-yum install unixODBC-devel
+# yum install unixODBC
+# yum install unixODBC-devel
 ```
 Ubuntu :
 ```
-apt-get install python3-dev
-apt-get install unixodbc-dev
+# apt-get install python3-dev
+# apt-get install unixodbc-dev
 ```
 Then:
 ```
