@@ -4,12 +4,24 @@ The format expected is produced by Masscan with the **-oL** parameter. However, 
 To keep track of the proxies tested, the script use connects to a MySQL database.
 
 ### Installation
+RHEL / CentOS:
+```
+yum install unixODBC
+yum install unixODBC-devel
+```
+Ubuntu :
+```
+apt-get install python3-dev
+apt-get install unixodbc-dev
+```
+Then:
 ```
 # pip3.7 install -r requirements.txt
 ```
 ### Usage
+First, change the DB connection string at line 21 to match your database :)
 ```
-# python3.6 process.py --help
+# python3.7 process.py --help
 Usage: process.py [options]
 
 Options:
@@ -41,7 +53,7 @@ Options:
 
 ### Masscan-Proxies-Tester usage example
 ```
-# python3.6 process.py -p 50
+# python3.7 process.py -p 50
 2019-01-11 00:06:19,250 - Reading /root/masscan/data/out.txt
 2019-01-11 00:06:19,640 - 282782 proxies loaded from file
 2019-01-11 00:06:19,640 - Default output file for bad proxies selected: /root/bad.txt
