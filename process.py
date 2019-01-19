@@ -20,6 +20,7 @@ UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
 loaded=processed=qsize_now=success=failure=0
 
+# Looks for ODBC drivers that have 'MySQL' in the name
 driver_names = [x for x in pyodbc.drivers() if 'MySQL' in x]
 if driver_names:
     driver_name = driver_names[0]
@@ -39,6 +40,7 @@ def ip2int(addr):
 def int2ip(addr):
     return str(socket.inet_ntoa(struct.pack("!I", addr)))
 
+# Insert the proxy and the reason into the DB
 def update_db_result(proxy, reason):
     try:
         cursor = cnxn.cursor()
@@ -48,6 +50,7 @@ def update_db_result(proxy, reason):
     except Exception as ex:
         logging.exception(ex)
 
+# Return True or False depending if the proxy is already present in the DB
 def already_in_db(proxy):
     try:
         ip, port = proxy.split(":")
@@ -61,6 +64,7 @@ def already_in_db(proxy):
     except Exception as ex:
         logging.exception(ex)
 
+# Read the result file returned from Masscan (with the -oL)
 def parse_results(file, inq,sizeq):
     lock.acquire()
     global loaded
@@ -81,6 +85,7 @@ def parse_results(file, inq,sizeq):
     logging.debug(str(loaded) + " proxies loaded from file")
     return
 
+# Return the title and the MD5 sum of the content of the specified website
 def fingerprint(website, TIMEOUT):
     try:
         req = urlrequest.Request(website)
@@ -96,8 +101,13 @@ def fingerprint(website, TIMEOUT):
         logging.error("Cannot fetch the website used to compare integrity!")
         exit(0)
 
+''' 
+ Try to connect to the specified website with the specified proxy.
+ Should be able to handle most errors and return the status of the connection.
+'''
 def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
    try:
+        # Prepare the request and fetch a website with the proxy
         req = urlrequest.Request(website)
         req.add_header('User-Agent', UA)
         req.set_proxy(proxy, 'http')
@@ -125,6 +135,7 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
        else:
            return False, str(z)
    else:
+       # If -i or --ignore is specified, we don't check the content of the page returned.
        if ignore is not None:
            return True, str(response.getcode())
 
@@ -134,11 +145,15 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
        if m != MD5_SUM:
            logging.debug("Content of the page doesn't match MD5 SUM")
 
+            # Check if part of the page (the title) is in the returned content
            if page_snippet.encode('utf-8') in content:
                return True, str(response.getcode()) + " Content altered"
+
+           # Check if the words 'login' or 'authorization' is in the content
            elif "login".encode() in content or "authorization".encode() in content:
                return False, str(response.getcode()) + " Login required"
            else:
+               # The content returned is unknown. We try to get the title of the page.
                match = re.search('<title>(.*?)</title>', str(content))
                page_snippet = match.group(1)[:60] if match else 'No title found'
                return False, str(response.getcode()) + " Content unknown. "+ page_snippet
@@ -147,10 +162,16 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            return True, str(response.getcode()) + " Integrity check OK"
 
 
+# Consume the queue and call test_proxy(). Results are passed to update_db_result().
 def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
+    # Waiting for parse_results() to fill the queue
+    time.sleep(1)
     while True:
+        # parse_results() unlocked, meaning the there's stuff in the queue (or the file is empty)
         if not lock.locked():
             global qsize_now,processed,success,failure
+
+            # For elements in the queue
             for x in iter(inq.get, sentinel):
                 qsize_now = inq.qsize()
                 Status, Result = test_proxy(x, website, timeout, ignore,MD5_SUM,page_snippet)
@@ -161,11 +182,15 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
                     success+=1
                 else:
                     failure+=1
+
+            # Queue is empty
             return
         else:
+            # Let's wait a little more for parse_results()
             time.sleep(2)
 
-def graph(sizeq):
+# Print the status of the processing with global variables loaded,processed,qsize_now,success and failure
+def status(sizeq):
     while True:
         logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
         if processed==loaded and not lock.locked():
@@ -201,16 +226,14 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.verbosity is None:
-        # INFO
-        options.verbosity=20
+        options.verbosity=20  # INFO
     else:
-        # DEBUG
-        options.verbosity=10
+        options.verbosity=10  # DEBUG
 
     logging.basicConfig(format='%(asctime)s - %(message)s', level=options.verbosity)
 
     if not os.path.isfile(options.masscan_results):
-        logging.error("Masscan results cannot be read!")
+        logging.error("Masscan results cannot be found!")
         parser.print_help()
         exit(0)
 
@@ -221,7 +244,7 @@ def main():
 
     inq = queue.Queue(maxsize=options.QUEUE_SIZE)
     threading.Thread(target=parse_results, args=(options.masscan_results, inq,options.QUEUE_SIZE)).start()
-    threading.Thread(target=graph, args=(options.QUEUE_SIZE,)).start()
+    threading.Thread(target=status, args=(options.QUEUE_SIZE,)).start()
 
     logging.warning("Starting " + str(options.THREADS) + " threads for processing")
     for i in range(options.THREADS):
