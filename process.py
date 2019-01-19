@@ -152,7 +152,7 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
             for x in iter(inq.get, sentinel):
                 qsize_now = inq.qsize()
                 Status, Result = test_proxy(x, website, timeout, ignore,MD5_SUM,page_snippet)
-                update_db_result(x, Result)
+                update_db_result(x, Result.decode("utf8"))
                 processed += 1
                 logging.debug(Result)
                 if Status:
