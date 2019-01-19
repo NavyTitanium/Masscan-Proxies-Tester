@@ -25,7 +25,7 @@ if driver_names:
     driver_name = driver_names[0]
     try:
         cnxn = pyodbc.connect(
-            'DRIVER={' + driver_name + '};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepass')
+            'DRIVER={' + driver_name + '};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepassword')
         cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
         cnxn.setencoding('utf-8')
     except Exception as ex:
@@ -115,6 +115,8 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            return False, str(a.reason)
        else:
            return False, str(a)
+   except socket.error as socketerror:
+       return False, str(socketerror)
    except urllib.error.URLError as z:
        if hasattr(z, 'code'):
            return False, str(z.code)
