@@ -17,15 +17,17 @@ import time
 from tqdm import *
 import re
 
-cnxn = pyodbc.connect('DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepass')
-cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
-cnxn.setencoding('utf-8')
+try:
+    cnxn = pyodbc.connect('DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepassword')
+    cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
+    cnxn.setencoding('utf-8')
+except Exception as ex:
+    logging.exception(ex)
+    exit("Please check the DB connection string")
 
 UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
-processed=0
-loaded=0
-qsize_now=0
+loaded=processed=qsize_now=success=failure=0
 
 def ip2int(addr):
     return str(struct.unpack("!I", socket.inet_aton(addr))[0])
@@ -37,7 +39,6 @@ def update_db_result(proxy, reason):
     try:
         cursor = cnxn.cursor()
         ip, port = proxy.split(":")
-        logging.DEBUG("INSERT INTO proxies (ipv4,port,reason) VALUES ('" + ip2int(ip) + "','" + port + "','" + reason + "')")
         cursor.execute("INSERT INTO proxies (ipv4,port,reason) VALUES ('" + ip2int(ip) + "','" + port + "','" + reason + "')")
         cnxn.commit()
     except Exception as ex:
@@ -47,7 +48,6 @@ def already_in_db(proxy):
     try:
         ip, port = proxy.split(":")
         cursor = cnxn.cursor()
-        logging.DEBUG("SELECT ID FROM proxies where ipv4 ='" + ip2int(ip) + "' and port = '" + port + "'")
         cursor.execute("SELECT ID FROM proxies where ipv4 ='" + ip2int(ip) + "' and port = '" + port + "'")
         row_count = cursor.rowcount
         if row_count == 0:
@@ -69,9 +69,9 @@ def parse_results(file, inq,sizeq):
                 ip = y[3]
                 if not already_in_db(ip + ":" + port):
                     inq.put(ip + ":" + port)
-                    loaded += 1
+                    loaded+=1
     inq.put(sentinel)
-    logging.info(str(loaded) + " proxies loaded from file")
+    logging.debug(str(loaded) + " proxies loaded from file")
     return
 
 def fingerprint(website, TIMEOUT):
@@ -137,30 +137,30 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
 
 
 def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
-    global qsize_now,processed
+    global qsize_now,processed,success,failure
     for x in iter(inq.get, sentinel):
-        processed +=1
+        processed+=1
         qsize_now = inq.qsize()
         Status, Result = test_proxy(x, website, timeout, ignore,MD5_SUM,page_snippet)
+        #update_db_result(x, Result)
         logging.debug(Result)
-        update_db_result(x, Result)
         if Status:
-            logging.info(x + " -- " + Result)
+            success+=1
         else:
-            logging.debug(x + " -- " + Result)
+            failure+=1
     return
 
 def graph(sizeq):
-    pbar1 = tqdm(total=sizeq, desc='Processing queue')
+    pbar1 = tqdm(total=sizeq, desc='Processing queue',position=0)
     while True:
         pbar1.n=qsize_now
-        pbar1.desc=(str(processed) + " items processed and " + str(loaded) + " item loaded. Queue size: ")
+        pbar1.desc=(str(loaded) + " items loaded and " + str(processed) + " item processed. Queue size: ")
         pbar1.refresh()
         if processed==loaded:
             pbar1.n = 0
             pbar1.refresh()
             pbar1.close()
-            logging.warning("Done.")
+            logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " invalid.")
             return
         time.sleep(0.2)
 
