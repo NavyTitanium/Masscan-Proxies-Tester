@@ -89,7 +89,7 @@ def fingerprint(website, TIMEOUT):
         logging.error("Cannot fetch the website used to compare integrity!")
         exit(0)
 
-def test_proxies(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
+def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
    try:
         req = urlrequest.Request(website)
         req.set_proxy(proxy, 'http')
@@ -141,7 +141,7 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
     for x in iter(inq.get, sentinel):
         processed +=1
         qsize_now = inq.qsize()
-        Status, Result = test_proxies(x, website, timeout, ignore,MD5_SUM,page_snippet)
+        Status, Result = test_proxy(x, website, timeout, ignore,MD5_SUM,page_snippet)
         logging.debug(Result)
         update_db_result(x, Result)
         if Status:
