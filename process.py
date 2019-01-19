@@ -14,8 +14,8 @@ import pyodbc
 import socket
 import struct
 import time
-from tqdm import *
 import re
+lock = threading.Lock()
 
 try:
     cnxn = pyodbc.connect('DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepassword')
@@ -58,6 +58,7 @@ def already_in_db(proxy):
         logging.exception(ex)
 
 def parse_results(file, inq,sizeq):
+    lock.acquire()
     global loaded
     logging.info("Reading " + file)
     f = open(file, "r")
@@ -70,6 +71,8 @@ def parse_results(file, inq,sizeq):
                 if not already_in_db(ip + ":" + port):
                     inq.put(ip + ":" + port)
                     loaded+=1
+                    if lock.locked(): lock.release()
+    if lock.locked(): lock.release()
     inq.put(sentinel)
     logging.debug(str(loaded) + " proxies loaded from file")
     return
@@ -77,10 +80,10 @@ def parse_results(file, inq,sizeq):
 def fingerprint(website, TIMEOUT):
     try:
         req = urlrequest.Request(website)
-        req.add_header = [('User-agent', UA)]
+        req.add_header('User-Agent', UA)
         content = urlrequest.urlopen(req, timeout=TIMEOUT).read()
-        match = re.search('<title(.*?)</title>', str(content))
-        page_snippet = match.group(1) if match else 'No title found'
+        match = re.search('<title>(.*?)</title>', str(content))
+        page_snippet = match.group(1)[:60] if match else 'No title found'
         MD5_SUM= hashlib.md5(content).hexdigest()
         logging.info("Hash value of the content of " + website + " : " + MD5_SUM)
         return MD5_SUM,page_snippet
@@ -92,8 +95,8 @@ def fingerprint(website, TIMEOUT):
 def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
    try:
         req = urlrequest.Request(website)
+        req.add_header('User-Agent', UA)
         req.set_proxy(proxy, 'http')
-        req.add_header = [('User-agent', UA)]
         response = urlrequest.urlopen(req, timeout=TIMEOUT)
    except ConnectionRefusedError:
        return False, "ConnectionRefusedError"
@@ -130,39 +133,39 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            elif "login".encode() in content or "authorization".encode() in content:
                return False, str(response.getcode()) + " Login required"
            else:
-               return False, str(response.getcode()) + " Content unknown"
+               match = re.search('<title>(.*?)</title>', str(content))
+               page_snippet = match.group(1)[:60] if match else 'No title found'
+               return False, str(response.getcode()) + " Content unknown. "+ page_snippet
        else:
            logging.debug("Content of the page match MD5 SUM")
            return True, str(response.getcode()) + " Integrity check OK"
 
 
 def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
-    global qsize_now,processed,success,failure
-    for x in iter(inq.get, sentinel):
-        processed+=1
-        qsize_now = inq.qsize()
-        Status, Result = test_proxy(x, website, timeout, ignore,MD5_SUM,page_snippet)
-        #update_db_result(x, Result)
-        logging.debug(Result)
-        if Status:
-            success+=1
+    while True:
+        if not lock.locked():
+            global qsize_now,processed,success,failure
+            for x in iter(inq.get, sentinel):
+                qsize_now = inq.qsize()
+                Status, Result = test_proxy(x, website, timeout, ignore,MD5_SUM,page_snippet)
+                update_db_result(x, Result)
+                processed += 1
+                logging.debug(Result)
+                if Status:
+                    success+=1
+                else:
+                    failure+=1
+            return
         else:
-            failure+=1
-    return
+            time.sleep(2)
 
 def graph(sizeq):
-    pbar1 = tqdm(total=sizeq, desc='Processing queue',position=0)
     while True:
-        pbar1.n=qsize_now
-        pbar1.desc=(str(loaded) + " items loaded and " + str(processed) + " item processed. Queue size: ")
-        pbar1.refresh()
-        if processed==loaded:
-            pbar1.n = 0
-            pbar1.refresh()
-            pbar1.close()
+        logging.info(str(loaded) + " items loaded and " + str(processed) + " item processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
+        if processed==loaded and not lock.locked():
             logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " invalid.")
             return
-        time.sleep(0.2)
+        time.sleep(20)
 
 def main():
     parser = OptionParser(usage="usage: %prog [options]")
@@ -186,10 +189,19 @@ def main():
     parser.add_option("-i", "--ignore",
                       dest="ignore", nargs=0,
                       help="(Optional) Ignore integrity validation of returned content")
+    parser.add_option("-v", "--verbose", nargs=0, dest="verbosity",
+                      help="(Optional) Set the level of logging to DEBUG. Default: INFO")
 
     (options, args) = parser.parse_args()
 
-    logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+    if options.verbosity is None:
+        # INFO
+        options.verbosity=20
+    else:
+        # DEBUG
+        options.verbosity=10
+
+    logging.basicConfig(format='%(asctime)s - %(message)s', level=options.verbosity)
 
     if not os.path.isfile(options.masscan_results):
         logging.error("Masscan results cannot be read!")
@@ -203,10 +215,9 @@ def main():
 
     inq = queue.Queue(maxsize=options.QUEUE_SIZE)
     threading.Thread(target=parse_results, args=(options.masscan_results, inq,options.QUEUE_SIZE)).start()
-    threading.Thread(target=graph,args=(options.QUEUE_SIZE,)).start()
+    threading.Thread(target=graph, args=(options.QUEUE_SIZE,)).start()
 
-    logging.warning("Starting " + str(options.THREADS) + " threads for processing\n "
-                                                         "***************************************************")
+    logging.warning("Starting " + str(options.THREADS) + " threads for processing")
     for i in range(options.THREADS):
         threading.Thread(target=process_inq, args=(inq, options.website, options.timeout, options.ignore,MD5_SUM,page_snippet)).start()
 
