@@ -16,18 +16,22 @@ import struct
 import time
 import re
 lock = threading.Lock()
-
-try:
-    cnxn = pyodbc.connect('DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepassword')
-    cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
-    cnxn.setencoding('utf-8')
-except Exception as ex:
-    logging.exception(ex)
-    exit("Please check the DB connection string")
-
 UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
 loaded=processed=qsize_now=success=failure=0
+
+driver_names = [x for x in pyodbc.drivers() if 'MySQL' in x]
+if driver_names:
+    driver_name = driver_names[0]
+    try:
+        cnxn = pyodbc.connect(
+            'DRIVER={' + driver_name + '};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepass')
+        cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
+        cnxn.setencoding('utf-8')
+    except Exception as ex:
+        exit("Please check the DB connection string: " + str(ex))
+else:
+    exit('No suitable driver found. Cannot connect.')
 
 def ip2int(addr):
     return str(struct.unpack("!I", socket.inet_aton(addr))[0])
