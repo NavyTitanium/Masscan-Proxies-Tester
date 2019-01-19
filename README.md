@@ -52,23 +52,13 @@ Options:
 
 ### Masscan-Proxies-Tester usage example
 ```
-# python3.7 process.py -p 50
-2019-01-11 00:06:19,250 - Reading /root/masscan/data/out.txt
-2019-01-11 00:06:19,640 - 282782 proxies loaded from file
-2019-01-11 00:06:19,640 - Default output file for bad proxies selected: /root/bad.txt
-2019-01-11 00:06:19,641 - Default output file for good proxies selected: /root/good.txt
-2019-01-11 00:06:19,641 - Starting 50 threads for processing
- **********************************************
-2019-01-11 00:06:19,644 - Loading 143 good elements already tested
-2019-01-11 00:06:19,646 - Loading 4517 bad elements already tested
-2019-01-11 00:06:25,872 - <IP#1>:8000 -- timed out
-2019-01-11 00:06:25,873 - <IP#2>:8000 -- timed out
-2019-01-11 00:06:35,869 - <IP#3>:3128 -- 403
-2019-01-11 00:06:35,904 - <IP#4>:8000 -- 404
-2019-01-11 00:06:48,006 - <IP#5>:8000 -- Connection reset
-2019-01-11 00:06:49,242 - <IP#6>:8080 -- 503
-2019-01-11 00:06:51,699 - <IP#7>:8000 -- 200 Content altered
-2019-01-11 00:06:53,234 - <IP#8>:8000 -- Bad status
+# python3.7 process.py -p 50 -q 500 -m scan_final.txt -t 7
+2019-01-11 00:06:18,250 - Hash value of the content of http://www.perdu.com : aeb7415366b7e5bd8f33664efa7ff31b
+2019-01-11 00:06:19,250 - Reading scan_final.txt
+2019-01-11 00:06:19,640 - 16 items loaded and 0 items processed. Queue size: 0/500
+2019-01-11 00:06:19,641 - Starting 60 threads for processing
+2019-01-11 00:06:19,646 - 927 items loaded and 367 item processed. Queue size: 499/500
+2019-01-11 00:06:25,872 - 1673 items loaded and 1113 item processed. Queue size: 499/500
 ...
 ```
 

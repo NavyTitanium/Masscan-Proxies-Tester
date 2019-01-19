@@ -165,7 +165,7 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
 
 def graph(sizeq):
     while True:
-        logging.info(str(loaded) + " items loaded and " + str(processed) + " item processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
+        logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
         if processed==loaded and not lock.locked():
             logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " invalid.")
             return
