@@ -1,7 +1,7 @@
 Parse the output file of a [Masscan](https://github.com/robertdavidgraham/masscan) scan and try to connect to a website with IPs:Port as the proxy. The script fills a queue with the proxies and use multiple threads to consume it. 
 The format expected is produced by Masscan with the **-oL** parameter. However, it should be easy to adjust the script to support other formats.
 
-To keep track of the proxies tested, the script use connects to a MySQL database.
+To keep track of the proxies tested, the script try to detect the ODBC driver and connects to the local MySQL database with it. Don't forget to change your password in the connection string!
 
 ### Installation
 RHEL / CentOS:
@@ -19,7 +19,6 @@ Then:
 # pip3.7 install -r requirements.txt
 ```
 ### Usage
-First, change the DB connection string at line 21 to match your database :)
 ```
 # python3.7 process.py --help
 Usage: process.py [options]
