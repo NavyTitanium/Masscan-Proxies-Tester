@@ -3,6 +3,10 @@ The format expected is produced by Masscan with the **-oL** parameter. However, 
 
 To keep track of the proxies tested, the script use connects to a MySQL database.
 
+### Installation
+```
+# pip3.7 install -r requirements.txt
+```
 ### Usage
 ```
 # python3.6 process.py --help
