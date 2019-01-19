@@ -11,12 +11,6 @@ Options:
   -m MASSCAN_RESULTS, --masscan=MASSCAN_RESULTS
                         Specify the file containing Masscan's results.
                         Default: /root/masscan/data/out.txt
-  -b OUTPUT_BAD, --bad=OUTPUT_BAD
-                        (Optional) Specify the output file for the proxies
-                        that aren't working. Default: /root/bad.txt
-  -g OUTPUT_GOOD, --good=OUTPUT_GOOD
-                        (Optional) Specify the output file for the working
-                        proxies. Default: /root/good.txt
   -w WEBSITE, --website=WEBSITE
                         (Optional) Specify the website used to test the
                         proxies. Default: http://perdu.com
@@ -30,7 +24,8 @@ Options:
                         (Optional) Specify the size of the queue. Default:
                         10000
   -i IGNORE, --ignore=IGNORE
-                        (Optional) Ignore integrity validation of returned content
+                        (Optional) Ignore integrity validation of returned
+                        content
 ```
 
 ### Masscan usage example
