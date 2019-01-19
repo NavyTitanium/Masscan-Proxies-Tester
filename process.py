@@ -127,8 +127,6 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            return False, str(a)
    except socket.error as socketerror:
        return False, str(socketerror)
-   except httplib.IncompleteRead as e:
-       return False, str(e)
    except urllib.error.URLError as z:
        if hasattr(z, 'code'):
            return False, str(z.code)
@@ -141,7 +139,11 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
        if ignore is not None:
            return True, str(response.getcode())
 
-       content = response.read()
+       try:
+           content = response.read()
+       except http.client.IncompleteRead as e:
+           return False, str(e)
+
        m= hashlib.md5(content).hexdigest()
 
        if m != MD5_SUM:
