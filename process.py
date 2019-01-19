@@ -21,7 +21,7 @@ cnxn = pyodbc.connect('DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=127.0.0.1;P
 cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
 cnxn.setencoding('utf-8')
 
-UA = 'User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
+UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
 processed=0
 loaded=0
@@ -77,7 +77,7 @@ def parse_results(file, inq,sizeq):
 def fingerprint(website, TIMEOUT):
     try:
         req = urlrequest.Request(website)
-        req.addheaders = [(UA)]
+        req.add_header = [('User-agent', UA)]
         content = urlrequest.urlopen(req, timeout=TIMEOUT).read()
         match = re.search('<title(.*?)</title>', str(content))
         page_snippet = match.group(1) if match else 'No title found'
@@ -93,7 +93,7 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
    try:
         req = urlrequest.Request(website)
         req.set_proxy(proxy, 'http')
-        req.addheaders = [(UA)]
+        req.add_header = [('User-agent', UA)]
         response = urlrequest.urlopen(req, timeout=TIMEOUT)
    except ConnectionRefusedError:
        return False, "ConnectionRefusedError"
