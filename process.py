@@ -127,6 +127,8 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            return False, str(a)
    except socket.error as socketerror:
        return False, str(socketerror)
+   except httplib.IncompleteRead as e:
+       return False, str(e)
    except urllib.error.URLError as z:
        if hasattr(z, 'code'):
            return False, str(z.code)
