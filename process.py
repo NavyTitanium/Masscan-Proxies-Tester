@@ -92,7 +92,7 @@ def fingerprint(website, TIMEOUT):
         req.add_header('User-Agent', UA)
         content = urlrequest.urlopen(req, timeout=TIMEOUT).read()
         match = re.search('<title>(.*?)</title>', str(content))
-        page_snippet = match.group(1)[:60] if match else 'No title found'
+        page_snippet = match.group(1)[:60].strip() if match else 'No title found'
         MD5_SUM= hashlib.md5(content).hexdigest()
         logging.info("Hash value of the content of " + website + " : " + MD5_SUM)
         return MD5_SUM,page_snippet
@@ -162,7 +162,7 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            else:
                # The content returned is unknown. We try to get the title of the page.
                match = re.search('<title>(.*?)</title>', str(content))
-               page_snippet = match.group(1)[:60] if match else 'No title found'
+               page_snippet = match.group(1)[:60].strip() if match else 'No title found'
                return False, str(response.getcode()) + " Content unknown. "+ page_snippet
        else:
            logging.debug("Content of the page match MD5 SUM")
@@ -198,6 +198,7 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
 
 # Print the status of the processing with global variables loaded,processed,qsize_now,success and failure
 def status(sizeq):
+    time.sleep(1)
     while True:
         logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
         if processed==loaded and not lock.locked():
