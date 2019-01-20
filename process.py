@@ -206,7 +206,7 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
 def status(sizeq):
     time.sleep(1)
     while True:
-        logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
+        logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq) + ". " + str(success) + " successful " + str(failure) + " invalid")
         if processed==loaded and not finish.locked():
             logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " invalid.")
             return
