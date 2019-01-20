@@ -66,7 +66,10 @@ def already_in_db(proxy):
         else:
             return True
     except Exception as ex:
+        if lock.locked(): lock.release()
+        finish.release()
         logging.exception(ex)
+        exit(0)
 
 # Read the result file returned from Masscan (with the -oL)
 def parse_results(file, inq,sizeq):
