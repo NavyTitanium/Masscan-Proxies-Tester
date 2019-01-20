@@ -24,8 +24,8 @@ UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
 loaded=processed=qsize_now=success=failure=0
 SQL_ATTR_CONNECTION_TIMEOUT = 113
-connection_timeout = 5
-login_timeout = 5
+db_connection_timeout = 5
+db_login_timeout = 5
 
 # Looks for ODBC drivers that have 'MySQL' in the name
 driver_names = [x for x in pyodbc.drivers() if 'MySQL' in x]
@@ -34,8 +34,8 @@ if driver_names:
     try:
         cnxn = pyodbc.connect(
             'DRIVER={' + driver_name + '};SERVER=127.0.0.1;PORT=3306;DATABASE=proxy;USER=root;PASSWORD=somepassword',
-            timeout = login_timeout,
-            attrs_before={SQL_ATTR_CONNECTION_TIMEOUT : connection_timeout})
+            timeout = db_login_timeout,
+            attrs_before={SQL_ATTR_CONNECTION_TIMEOUT : db_connection_timeout})
         cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
         cnxn.setencoding('utf-8')
     except Exception as ex:
