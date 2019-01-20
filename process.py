@@ -134,6 +134,9 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
            return False, str(z.reason)
        else:
            return False, str(z)
+   except Exception as e:
+       return False, str(e)
+
    else:
        # If -i or --ignore is specified, we don't check the content of the page returned.
        if ignore is not None:
@@ -141,7 +144,7 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
 
        try:
            content = response.read()
-       except http.client.IncompleteRead as e:
+       except Exception as e:
            return False, str(e)
 
        m= hashlib.md5(content).hexdigest()
