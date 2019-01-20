@@ -16,6 +16,7 @@ import struct
 import time
 import re
 lock = threading.Lock()
+finish= threading.Lock()
 UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
 loaded=processed=qsize_now=success=failure=0
@@ -67,6 +68,7 @@ def already_in_db(proxy):
 # Read the result file returned from Masscan (with the -oL)
 def parse_results(file, inq,sizeq):
     lock.acquire()
+    finish.acquire()
     global loaded
     logging.info("Reading " + file)
     f = open(file, "r")
@@ -81,6 +83,7 @@ def parse_results(file, inq,sizeq):
                     loaded+=1
                     if lock.locked(): lock.release()
     if lock.locked(): lock.release()
+    finish.release()
     inq.put(sentinel)
     logging.debug(str(loaded) + " proxies loaded from file")
     return
@@ -190,8 +193,11 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
                 else:
                     failure+=1
 
-            # Queue is empty
-            return
+            # Queue is empty, but data is being read by parse_results()
+            if finish.locked():
+                pass
+            else:
+                return
         else:
             # Let's wait a little more for parse_results()
             time.sleep(2)
@@ -201,7 +207,7 @@ def status(sizeq):
     time.sleep(1)
     while True:
         logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq))
-        if processed==loaded and not lock.locked():
+        if processed==loaded and not finish.locked():
             logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " invalid.")
             return
         time.sleep(20)
