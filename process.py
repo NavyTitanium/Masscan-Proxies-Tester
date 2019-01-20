@@ -56,7 +56,10 @@ def update_db_result(proxy, reason):
         ip, port = proxy.split(":")
         cursor.execute("INSERT INTO proxies (ipv4,port,reason) VALUES ('" + ip2int(ip) + "','" + port + "','" + reason + "')")
         cnxn.commit()
+        cursor.close()
     except Exception as ex:
+        cursor.rollback()
+        cursor.close()
         logging.exception(ex)
 
 # Return True or False depending if the proxy is already present in the DB
@@ -64,13 +67,16 @@ def already_in_db(proxy):
     try:
         ip, port = proxy.split(":")
         cursor = cnxn.cursor()
-        cursor.execute("SELECT ID FROM proxies where ipv4 ='" + ip2int(ip) + "' and port = '" + port + "'")
-        row_count = cursor.rowcount
-        if row_count == 0:
+        cursor.execute("SELECT count(ipv4) FROM proxies where ipv4 ='" + ip2int(ip) + "' and port = '" + port + "'")
+        result=cursor.fetchone()
+        cursor.close()
+        if result[0] == 0:
             return False
         else:
             return True
     except Exception as ex:
+        cursor.rollback()
+        cursor.close()
         if lock.locked(): lock.release()
         finish.release()
         logging.exception(ex)
