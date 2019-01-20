@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import urllib.request
 from urllib import request as urlrequest
 from urllib.error import URLError
@@ -15,6 +17,7 @@ import socket
 import struct
 import time
 import re
+
 lock = threading.Lock()
 finish= threading.Lock()
 UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
