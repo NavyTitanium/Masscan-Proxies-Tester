@@ -82,7 +82,7 @@ def already_in_db(proxy):
         logging.exception(ex)
         exit(0)
 
-# Read the result file returned from Masscan (with the -oL)
+# Read the result file returned from Masscan (output generated with -oL)
 def parse_results(file, inq,sizeq):
     lock.acquire()
     finish.acquire()
