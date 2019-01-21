@@ -225,7 +225,7 @@ def status(sizeq):
     while True:
         logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq) + ". " + str(success) + " successful " + str(failure) + " invalid")
         if processed==loaded and not finish.locked():
-            logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " invalid.")
+            logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " were invalid.")
             return
         time.sleep(20)
 
