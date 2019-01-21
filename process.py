@@ -102,7 +102,7 @@ def parse_results(file, inq,sizeq):
     if lock.locked(): lock.release()
     finish.release()
     inq.put(sentinel)
-    logging.debug(str(loaded) + " proxies loaded from file")
+    logging.info(str(loaded) + " proxies loaded from file")
     return
 
 # Return the title and the MD5 sum of the content of the specified website
