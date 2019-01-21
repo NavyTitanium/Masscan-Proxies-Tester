@@ -88,17 +88,17 @@ def parse_results(file, inq,sizeq):
     finish.acquire()
     global loaded
     logging.info("Reading " + file)
-    f = open(file, "r")
-    for x in f:
-        if "#" not in x:
-            y = x.split()
-            if len(y) == 5:
-                port = y[2]
-                ip = y[3]
-                if not already_in_db(ip + ":" + port):
-                    inq.put(ip + ":" + port)
-                    loaded+=1
-                    if lock.locked(): lock.release()
+    with open(file) as f:
+        for x in f:
+            if "#" not in x:
+                y = x.split()
+                if len(y) == 5:
+                    port = y[2]
+                    ip = y[3]
+                    if not already_in_db(ip + ":" + port):
+                        inq.put(ip + ":" + port)
+                        loaded+=1
+                        if lock.locked(): lock.release()
     if lock.locked(): lock.release()
     finish.release()
     inq.put(sentinel)
