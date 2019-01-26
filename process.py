@@ -83,11 +83,12 @@ def already_in_db(proxy):
         exit(0)
 
 # Read the result file returned from Masscan (output generated with -oL)
-def parse_results(file, inq,sizeq):
+def parse_results(file, inq):
     lock.acquire()
     finish.acquire()
     global loaded
     logging.info("Reading " + file)
+
     with open(file) as f:
         for x in f:
             if "#" not in x:
@@ -127,11 +128,11 @@ def filerev(somefile, buffer=0x20000):
         yield lines[0]
 
 # Read the result file returned from Masscan in reverse
-def parse_results_reverse(file, inq, sizeq):
+def parse_results_reverse(file, inq,):
     lock.acquire()
     finish.acquire()
     global loaded
-    logging.info("Reading " + file)
+    logging.info("Reading in reverse " + file )
     with open(file) as f:
         for x in filerev(f):
             if "#" not in x:
@@ -325,7 +326,7 @@ def main():
         threading.Thread(target=parse_results, args=(options.masscan_results, inq, options.QUEUE_SIZE)).start()
     else:
         logging.info("Parsing the file in reverse")
-        threading.Thread(target=parse_results_reverse, args=(options.masscan_results, inq, options.QUEUE_SIZE)).start()
+        threading.Thread(target=parse_results_reverse, args=(options.masscan_results, inq)).start()
 
     threading.Thread(target=status, args=(options.QUEUE_SIZE,)).start()
 
