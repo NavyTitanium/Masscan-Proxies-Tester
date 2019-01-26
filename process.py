@@ -323,7 +323,7 @@ def main():
     inq = queue.Queue(maxsize=options.QUEUE_SIZE)
 
     if options.reverse is None:
-        threading.Thread(target=parse_results, args=(options.masscan_results, inq, options.QUEUE_SIZE)).start()
+        threading.Thread(target=parse_results, args=(options.masscan_results, inq)).start()
     else:
         logging.info("Parsing the file in reverse")
         threading.Thread(target=parse_results_reverse, args=(options.masscan_results, inq)).start()
