@@ -6,5 +6,6 @@ CREATE TABLE `proxies` (
   `port` smallint(5) unsigned NOT NULL,
   `date_tested` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `reason` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_proxies_ipv4_port` (`ipv4`,`port`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
