@@ -46,6 +46,11 @@ Options:
   -v VERBOSITY, --verbose=VERBOSITY
                         (Optional) Set the level of logging to DEBUG. Default:
                         INFO
+  -r REVERSE, --reverse=REVERSE
+                        (Optional) Start reading the results file from the
+                        end. Useful when you want to restart the script from a
+                        large file that has been already partially processed.
+                        Default: In order
 ```
 
 ### Masscan usage example
