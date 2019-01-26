@@ -105,6 +105,50 @@ def parse_results(file, inq,sizeq):
     logging.info(str(loaded) + " proxies loaded from file")
     return
 
+
+# Read a file in reverse
+def filerev(somefile, buffer=0x20000):
+    somefile.seek(0, os.SEEK_END)
+    size = somefile.tell()
+    lines = ['']
+    rem = size % buffer
+    pos = max(0, (size // buffer - 1) * buffer)
+    while pos >= 0:
+        somefile.seek(pos, os.SEEK_SET)
+        data = somefile.read(rem + buffer) + lines[0]
+        rem = 0
+        lines = re.findall('[^\n]*\n?', data)
+        ix = len(lines) - 2
+        while ix > 0:
+            yield lines[ix]
+            ix -= 1
+        pos -= buffer
+    else:
+        yield lines[0]
+
+# Read the result file returned from Masscan in reverse
+def parse_results_reverse(file, inq, sizeq):
+    lock.acquire()
+    finish.acquire()
+    global loaded
+    logging.info("Reading " + file)
+    with open(file) as f:
+        for x in filerev(f):
+            if "#" not in x:
+                y = x.split()
+                if len(y) == 5:
+                    port = y[2]
+                    ip = y[3]
+                    if not already_in_db(ip + ":" + port):
+                        inq.put(ip + ":" + port)
+                        loaded += 1
+                        if lock.locked(): lock.release()
+    if lock.locked(): lock.release()
+    finish.release()
+    inq.put(sentinel)
+    logging.info(str(loaded) + " proxies loaded from file")
+    return
+
 # Return the title and the MD5 sum of the content of the specified website
 def fingerprint(website, TIMEOUT):
     try:
@@ -253,6 +297,8 @@ def main():
                       help="(Optional) Ignore integrity validation of returned content")
     parser.add_option("-v", "--verbose", nargs=0, dest="verbosity",
                       help="(Optional) Set the level of logging to DEBUG. Default: INFO")
+    parser.add_option("-r", "--reverse", nargs=0, dest="reverse",
+                      help="(Optional) Start reading the results file from the end. Useful when you want to restart the script from a large file that has been already partially processed. Default: In order")
 
     (options, args) = parser.parse_args()
 
@@ -274,7 +320,13 @@ def main():
         logging.info("Skipping integrity validation")
 
     inq = queue.Queue(maxsize=options.QUEUE_SIZE)
-    threading.Thread(target=parse_results, args=(options.masscan_results, inq,options.QUEUE_SIZE)).start()
+
+    if options.reverse is None:
+        threading.Thread(target=parse_results, args=(options.masscan_results, inq, options.QUEUE_SIZE)).start()
+    else:
+        logging.info("Parsing the file in reverse")
+        threading.Thread(target=parse_results_reverse, args=(options.masscan_results, inq, options.QUEUE_SIZE)).start()
+
     threading.Thread(target=status, args=(options.QUEUE_SIZE,)).start()
 
     logging.warning("Starting " + str(options.THREADS) + " threads for processing")
