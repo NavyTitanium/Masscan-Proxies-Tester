@@ -328,11 +328,11 @@ def main():
         logging.info("Parsing the file in reverse")
         threading.Thread(target=parse_results_reverse, args=(options.masscan_results, inq)).start()
 
-    threading.Thread(target=status, args=(options.QUEUE_SIZE,)).start()
-
     logging.warning("Starting " + str(options.THREADS) + " threads for processing")
     for i in range(options.THREADS):
         threading.Thread(target=process_inq, args=(inq, options.website, options.timeout, options.ignore,MD5_SUM,page_snippet)).start()
+
+    status(options.QUEUE_SIZE)
 
 if __name__ == '__main__':
     main()
