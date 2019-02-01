@@ -44,7 +44,7 @@ else:
     exit('No suitable driver found. Cannot connect.')
 
 def ip2int(addr):
-    return str(struct.unpack("!I", socket.inet_aton(addr))[0])
+    return int(struct.unpack("!I", socket.inet_aton(addr))[0])
 
 def int2ip(addr):
     return str(socket.inet_ntoa(struct.pack("!I", addr)))
@@ -54,7 +54,7 @@ def update_db_result(proxy, reason):
     try:
         cursor = cnxn.cursor()
         ip, port = proxy.split(":")
-        cursor.execute("INSERT INTO proxies (ipv4,port,reason) VALUES ('" + ip2int(ip) + "','" + port + "','" + reason + "')")
+        cursor.execute("INSERT INTO proxies (ipv4,port,reason) VALUES (%d, %d, '%s')" % (ip2int(ip),int(port),reason.replace("'", "")))
         cnxn.commit()
         cursor.close()
     except Exception as ex:
@@ -67,7 +67,7 @@ def already_in_db(proxy):
     try:
         ip, port = proxy.split(":")
         cursor = cnxn.cursor()
-        cursor.execute("SELECT count(ipv4) FROM proxies where ipv4 ='" + ip2int(ip) + "' and port = '" + port + "'")
+        cursor.execute("SELECT count(ipv4) FROM proxies where ipv4 =%d and port =%d" % (ip2int(ip),int(port)))
         result=cursor.fetchone()
         cursor.close()
         if result[0] == 0:
@@ -269,7 +269,7 @@ def status(sizeq):
     time.sleep(1)
     while True:
         logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq) + ". " + str(success) + " successful " + str(failure) + " invalid")
-        if qsize_now==0 and not finish.locked():
+        if processed==loaded and not finish.locked():
             logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " were invalid.")
             return
         time.sleep(20)
