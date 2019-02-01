@@ -54,7 +54,7 @@ def update_db_result(proxy, reason):
     try:
         cursor = cnxn.cursor()
         ip, port = proxy.split(":")
-        cursor.execute("INSERT INTO proxies (ipv4,port,reason) VALUES (%d, %d, '%s')" % (ip2int(ip),int(port),reason.replace("'", "")))
+        cursor.execute("INSERT INTO proxies (ipv4,port,reason) VALUES (%d, %d, '%s')" % (ip2int(ip),int(port),reason.replace("'", "").replace("\\","")))
         cnxn.commit()
         cursor.close()
     except Exception as ex:
