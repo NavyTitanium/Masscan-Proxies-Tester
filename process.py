@@ -271,7 +271,7 @@ def status(sizeq,lines):
         dict(size=qsize_now,capacity=sizeq,),)
 
     status_overall= FormatCustomText(
-        'Total: %(done)d/%(total)d (%(successful)d Successful %(fail)d Invalid)',
+        '%(done)d/%(total)d (%(successful)d Successful %(fail)d Invalid)',
         dict(done=processed,total=lines,successful=success,fail=failure,),)
 
     widgets = ['Total processed: ', Percentage(), ' ', Bar(marker='#', left='[', right=']'), ' ', status_overall, ' - ', status_queue, ' | ',
