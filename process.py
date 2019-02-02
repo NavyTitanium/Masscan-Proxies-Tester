@@ -285,6 +285,9 @@ def status(sizeq,lines):
         status_overall.update_mapping(done=processed,successful=success,fail=failure)
         pbar.update(processed)
         time.sleep(0.5)
+        if processed == loaded and not finish.locked():
+            logging.warning("Done. " + str(success) + " valid proxies found and " + str(failure) + " were invalid.")
+            return
     pbar.finish()
 
 def get_number_lines(file):
