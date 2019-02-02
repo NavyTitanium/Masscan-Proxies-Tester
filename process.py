@@ -17,6 +17,7 @@ import socket
 import struct
 import time
 import re
+from progressbar import *
 
 lock = threading.Lock()
 finish= threading.Lock()
@@ -171,68 +172,67 @@ def fingerprint(website, TIMEOUT):
  Should be able to handle most errors and return the status of the connection.
 '''
 def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
-   try:
+    try:
         # Prepare the request and fetch a website with the proxy
         req = urlrequest.Request(website)
         req.add_header('User-Agent', UA)
         req.set_proxy(proxy, 'http')
         response = urlrequest.urlopen(req, timeout=TIMEOUT)
-   except ConnectionRefusedError:
-       return False, "ConnectionRefusedError"
-   except ConnectionResetError:
-       return False, "Connection reset"
-   except http.client.BadStatusLine:
-       return False, "Bad status"
-   except IOError as a:
-       if hasattr(a, 'code'):
-           return False, str(a.code)
-       if hasattr(a, 'reason'):
-           return False, str(a.reason)
-       else:
-           return False, str(a)
-   except socket.error as socketerror:
-       return False, str(socketerror)
-   except urllib.error.URLError as z:
-       if hasattr(z, 'code'):
-           return False, str(z.code)
-       if hasattr(z, 'reason'):
-           return False, str(z.reason)
-       else:
-           return False, str(z)
-   except Exception as e:
-       return False, str(e)
+    except ConnectionRefusedError:
+        return False, "ConnectionRefusedError"
+    except ConnectionResetError:
+        return False, "Connection reset"
+    except http.client.BadStatusLine:
+        return False, "Bad status"
+    except IOError as a:
+        if hasattr(a, 'code'):
+            return False, str(a.code)
+        if hasattr(a, 'reason'):
+            return False, str(a.reason)
+        else:
+            return False, str(a)
+    except socket.error as socketerror:
+        return False, str(socketerror)
+    except urllib.error.URLError as z:
+        if hasattr(z, 'code'):
+            return False, str(z.code)
+        if hasattr(z, 'reason'):
+            return False, str(z.reason)
+        else:
+            return False, str(z)
+    except Exception as e:
+        return False, str(e)
 
-   else:
-       # If -i or --ignore is specified, we don't check the content of the page returned.
-       if ignore is not None:
-           return True, str(response.getcode())
+    else:
+        # If -i or --ignore is specified, we don't check the content of the page returned.
+        if ignore is not None:
+            return True, str(response.getcode())
 
-       try:
-           content = response.read()
-       except Exception as e:
-           return False, str(e)
+        try:
+            content = response.read()
+        except Exception as e:
+            return False, str(e)
 
-       m= hashlib.md5(content).hexdigest()
+        m = hashlib.md5(content).hexdigest()
 
-       if m != MD5_SUM:
-           logging.debug("Content of the page doesn't match MD5 SUM")
+        if m != MD5_SUM:
+            logging.debug("Content of the page doesn't match MD5 SUM")
 
             # Check if part of the page (the title) is in the returned content
-           if page_snippet.encode('utf-8') in content:
-               return True, str(response.getcode()) + " Content altered"
+            if page_snippet.encode('utf-8') in content:
+                return True, str(response.getcode()) + " Content altered"
 
-           # Check if the words 'login' or 'authorization' is in the content
-           elif "login".encode() in content or "authorization".encode() in content:
-               return False, str(response.getcode()) + " Login required"
-           else:
-               # The content returned is unknown. We try to get the title of the page.
-               match = re.search('<title>(.*?)</title>', str(content))
-               page_snippet = match.group(1)[:60].strip() if match else 'No title found'
-               return False, str(response.getcode()) + " Content unknown. "+ page_snippet
-       else:
-           logging.debug("Content of the page match MD5 SUM")
-           return True, str(response.getcode()) + " Integrity check OK"
-
+            # Check if the words 'login' or 'authorization' is in the content
+            elif "login".encode() in content or "authorization".encode() in content:
+                return False, str(response.getcode()) + " Login required"
+            else:
+                # The content returned is unknown. We try to get the title of the page.
+                match = re.search('<title>(.*?)</title>', str(content))
+                page_snippet = match.group(1)[:60].strip() if match else 'No title found'
+                return False, str(response.getcode()) + " Content unknown. " + page_snippet
+        else:
+            logging.debug("Content of the page match MD5 SUM")
+            return True, str(response.getcode()) + " Integrity check OK"
 
 # Consume the queue and call test_proxy(). Results are passed to update_db_result().
 def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
@@ -265,14 +265,37 @@ def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
             time.sleep(2)
 
 # Print the status of the processing with global variables loaded,processed,qsize_now,success and failure
-def status(sizeq):
-    time.sleep(1)
+def status(sizeq,lines):
+    status_queue = FormatCustomText(
+        'Queue size: %(size)d/%(capacity)d',
+        dict(size=qsize_now,capacity=sizeq,),)
+
+    status_overall= FormatCustomText(
+        'Total: %(done)d/%(total)d (%(successful)d Successful %(fail)d Invalid)',
+        dict(done=processed,total=lines,successful=success,fail=failure,),)
+
+    widgets = ['Total processed: ', Percentage(), ' ', Bar(marker='#', left='[', right=']'), ' ', status_overall, ' - ', status_queue, ' | ',
+             ETA(), ' | ', Timer() ]
+
+    pbar = ProgressBar(widgets=widgets, maxval=lines,term_width=150)
+    pbar.start()
+
     while True:
-        logging.info(str(loaded) + " items loaded and " + str(processed) + " items processed. Queue size: " + str(qsize_now) + "/" + str(sizeq) + ". " + str(success) + " successful " + str(failure) + " invalid")
-        if processed==loaded and not finish.locked():
-            logging.warning("Done. " + str(success)+ " valid proxies found and " + str(failure) + " were invalid.")
-            return
-        time.sleep(20)
+        status_queue.update_mapping(size=qsize_now)
+        status_overall.update_mapping(done=processed,successful=success,fail=failure)
+        pbar.update(processed)
+        time.sleep(0.5)
+    pbar.finish()
+
+def get_number_lines(file):
+    def blocks(files, size=65536):
+        while True:
+            b = files.read(size)
+            if not b: break
+            yield b
+
+    with open(file, "r", encoding="utf-8", errors='ignore') as f:
+        return (sum(bl.count("\n") for bl in blocks(f)))
 
 def main():
     parser = OptionParser(usage="usage: %prog [options]")
@@ -332,7 +355,7 @@ def main():
     for i in range(options.THREADS):
         threading.Thread(target=process_inq, args=(inq, options.website, options.timeout, options.ignore,MD5_SUM,page_snippet)).start()
 
-    status(options.QUEUE_SIZE)
+    status(options.QUEUE_SIZE,get_number_lines(options.masscan_results))
 
 if __name__ == '__main__':
     main()
