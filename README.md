@@ -64,7 +64,7 @@ Options:
 2019-01-11 00:06:18,250 - Hash value of the content of http://www.perdu.com : aeb7415366b7e5bd8f33664efa7ff31b
 2019-01-11 00:06:19,250 - Reading scan_final.txt
 2019-01-11 00:06:19,635 - Starting 50 threads for processing
-2019-01-11 00:06:19,640 - 16 items loaded and 0 items processed. Queue size: 0/500. 0 successful 0 invalid
+2019-01-11 00:06:19,640 - 16 items loaded and 0 items processed. Queue size: 16/500. 0 successful 0 invalid
 2019-01-11 00:06:19,646 - 927 items loaded and 367 item processed. Queue size: 499/500. 85 successful 282 invalid
 2019-01-11 00:06:25,872 - 1673 items loaded and 1113 item processed. Queue size: 499/500. 104 successful 1009 invalid
 ...
