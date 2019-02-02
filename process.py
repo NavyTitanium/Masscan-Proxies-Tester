@@ -23,7 +23,7 @@ lock = threading.Lock()
 finish= threading.Lock()
 UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:64.0) Gecko/20100101 Firefox/64.0'
 sentinel = object()
-loaded=processed=qsize_now=success=failure=0
+loaded=processed=qsize_now=success=failure=skipped=0
 SQL_ATTR_CONNECTION_TIMEOUT = 113
 db_connection_timeout = 5
 db_login_timeout = 5
@@ -87,7 +87,7 @@ def already_in_db(proxy):
 def parse_results(file, inq):
     lock.acquire()
     finish.acquire()
-    global loaded
+    global loaded,skipped
     logging.info("Reading " + file)
 
     with open(file) as f:
@@ -101,10 +101,12 @@ def parse_results(file, inq):
                         inq.put(ip + ":" + port)
                         loaded+=1
                         if lock.locked(): lock.release()
+                    else:
+                        skipped+=1
     if lock.locked(): lock.release()
     finish.release()
     inq.put(sentinel)
-    logging.info(str(loaded) + " proxies loaded from file")
+    logging.info("\n" + str(loaded) + " proxies loaded from file")
     return
 
 
@@ -132,7 +134,7 @@ def filerev(somefile, buffer=0x20000):
 def parse_results_reverse(file, inq,):
     lock.acquire()
     finish.acquire()
-    global loaded
+    global loaded,skipped
     logging.info("Reading in reverse " + file )
     with open(file) as f:
         for x in filerev(f):
@@ -145,6 +147,8 @@ def parse_results_reverse(file, inq,):
                         inq.put(ip + ":" + port)
                         loaded += 1
                         if lock.locked(): lock.release()
+                    else:
+                        skipped+=1
     if lock.locked(): lock.release()
     finish.release()
     inq.put(sentinel)
@@ -272,7 +276,7 @@ def status(sizeq,lines):
 
     status_overall= FormatCustomText(
         '%(done)d/%(total)d (%(successful)d Successful %(fail)d Invalid)',
-        dict(done=processed,total=lines,successful=success,fail=failure,),)
+        dict(done=processed+skipped,total=lines,successful=success,fail=failure,),)
 
     widgets = ['Total processed: ', Percentage(), ' ', Bar(marker='#', left='[', right=']'), ' ', status_overall, ' - ', status_queue, ' | ',
              ETA(), ' | ', Timer() ]
@@ -282,12 +286,12 @@ def status(sizeq,lines):
 
     while True:
         status_queue.update_mapping(size=qsize_now)
-        status_overall.update_mapping(done=processed,successful=success,fail=failure)
-        pbar.update(processed)
+        status_overall.update_mapping(done=processed+skipped,successful=success,fail=failure)
+        pbar.update(processed+skipped)
         time.sleep(0.5)
         if processed == loaded and not finish.locked():
             pbar.finish()
-            logging.warning("Done. " + str(success) + " valid proxies found and " + str(failure) + " were invalid.")
+            logging.warning("Done. " + str(success) + " valid proxies found and " + str(failure) + " were invalid. " + str(skipped) + " were skipped.")
             return
 
 def get_number_lines(file):
