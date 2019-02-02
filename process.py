@@ -286,9 +286,9 @@ def status(sizeq,lines):
         pbar.update(processed)
         time.sleep(0.5)
         if processed == loaded and not finish.locked():
+            pbar.finish()
             logging.warning("Done. " + str(success) + " valid proxies found and " + str(failure) + " were invalid.")
             return
-    pbar.finish()
 
 def get_number_lines(file):
     def blocks(files, size=65536):
