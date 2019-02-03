@@ -288,11 +288,11 @@ def status(sizeq,lines):
         status_queue.update_mapping(size=qsize_now)
         status_overall.update_mapping(done=processed+skipped,successful=success,fail=failure)
         pbar.update(processed+skipped)
-        time.sleep(0.5)
         if processed == loaded and not finish.locked():
             pbar.finish()
             logging.warning("Done. " + str(success) + " valid proxies found and " + str(failure) + " were invalid. " + str(skipped) + " were skipped.")
             return
+        time.sleep(0.5)
 
 def get_number_lines(file):
     def blocks(files, size=65536):
