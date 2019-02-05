@@ -178,6 +178,7 @@ def fingerprint(website, TIMEOUT):
 def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
     try:
         # Prepare the request and fetch a website with the proxy
+        socket.setdefaulttimeout(TIMEOUT)
         req = urlrequest.Request(website)
         req.add_header('User-Agent', UA)
         req.set_proxy(proxy, 'http')
@@ -212,10 +213,14 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
         if ignore is not None:
             return True, str(response.getcode())
 
-        try:
-            content = response.read()
-        except Exception as e:
-            return False, str(e)
+        stream=['audio','mpeg','video','stream']
+        if stream not in response.info()['content-type']:
+            try:
+                content = response.read()
+            except Exception as e:
+                return False, str(e)
+        else:
+            return False,"Is a stream"
 
         m = hashlib.md5(content).hexdigest()
 
@@ -362,7 +367,7 @@ def main():
     for i in range(options.THREADS):
         threading.Thread(target=process_inq, args=(inq, options.website, options.timeout, options.ignore,MD5_SUM,page_snippet)).start()
 
-    status(options.QUEUE_SIZE,get_number_lines(options.masscan_results))
+    status(options.QUEUE_SIZE,get_number_lines(options.masscan_results)+1)
 
 if __name__ == '__main__':
     main()
