@@ -214,7 +214,7 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
             return True, str(response.getcode())
 
         stream=['audio','mpeg','video','stream']
-        if stream not in response.info()['content-type']:
+        if response.info()['content-type'] not in stream:
             try:
                 content = response.read()
             except Exception as e:
