@@ -208,40 +208,40 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
     except Exception as e:
         return False, str(e)
 
+    # If -i or --ignore is specified, we don't check the content of the page returned.
+    if ignore is not None:
+        return True, str(response.getcode())
+
+    stream=['audio','mpeg','video','stream']
+    if response.info()['content-type'] not in stream:
+        try:
+            content = response.read()
+            response.close()
+        except Exception as e:
+            return False, str(e)
     else:
-        # If -i or --ignore is specified, we don't check the content of the page returned.
-        if ignore is not None:
-            return True, str(response.getcode())
+        return False,"Is a stream"
 
-        stream=['audio','mpeg','video','stream']
-        if response.info()['content-type'] not in stream:
-            try:
-                content = response.read()
-            except Exception as e:
-                return False, str(e)
+    m = hashlib.md5(content).hexdigest()
+
+    if m != MD5_SUM:
+        logging.debug("Content of the page doesn't match MD5 SUM")
+
+        # Check if part of the page (the title) is in the returned content
+        if page_snippet.encode('utf-8') in content:
+            return True, str(response.getcode()) + " Content altered"
+
+        # Check if the words 'login' or 'authorization' is in the content
+        elif "login".encode() in content or "authorization".encode() in content:
+            return False, str(response.getcode()) + " Login required"
         else:
-            return False,"Is a stream"
-
-        m = hashlib.md5(content).hexdigest()
-
-        if m != MD5_SUM:
-            logging.debug("Content of the page doesn't match MD5 SUM")
-
-            # Check if part of the page (the title) is in the returned content
-            if page_snippet.encode('utf-8') in content:
-                return True, str(response.getcode()) + " Content altered"
-
-            # Check if the words 'login' or 'authorization' is in the content
-            elif "login".encode() in content or "authorization".encode() in content:
-                return False, str(response.getcode()) + " Login required"
-            else:
-                # The content returned is unknown. We try to get the title of the page.
-                match = re.search('<title>(.*?)</title>', str(content))
-                page_snippet = match.group(1)[:60].strip() if match else 'No title found'
-                return False, str(response.getcode()) + " Content unknown. " + page_snippet
-        else:
-            logging.debug("Content of the page match MD5 SUM")
-            return True, str(response.getcode()) + " Integrity check OK"
+            # The content returned is unknown. We try to get the title of the page.
+            match = re.search('<title>(.*?)</title>', str(content))
+            page_snippet = match.group(1)[:60].strip() if match else 'No title found'
+            return False, str(response.getcode()) + " Content unknown. " + page_snippet
+    else:
+        logging.debug("Content of the page match MD5 SUM")
+        return True, str(response.getcode()) + " Integrity check OK"
 
 # Consume the queue and call test_proxy(). Results are passed to update_db_result().
 def process_inq(inq, website, timeout, ignore,MD5_SUM,page_snippet):
