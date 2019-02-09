@@ -211,9 +211,9 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
     if ignore is not None:
         return True, str(response.getcode())
 
-    stream=['audio','mpeg','video','stream','accp']
     type= response.info()['content-type']
     if type:
+        stream = ['audio', 'mpeg', 'video', 'stream', 'accp']
         for s in stream:
             if s in type: return False, "Is a stream"
 
