@@ -209,6 +209,7 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
 
     # If -i or --ignore is specified, we don't check the content of the page returned.
     if ignore is not None:
+        response.close()
         return True, str(response.getcode())
 
     type= response.info()['content-type']
