@@ -109,7 +109,6 @@ def parse_results(file, inq):
     logging.info("\n" + str(loaded) + " proxies loaded from file")
     return
 
-
 # Read a file in reverse
 def filerev(somefile, buffer=0x20000):
     somefile.seek(0, os.SEEK_END)
@@ -212,15 +211,17 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
     if ignore is not None:
         return True, str(response.getcode())
 
-    stream=['audio','mpeg','video','stream']
-    if response.info()['content-type'] not in stream:
-        try:
-            content = response.read()
-            response.close()
-        except Exception as e:
-            return False, str(e)
-    else:
-        return False,"Is a stream"
+    stream=['audio','mpeg','video','stream','accp']
+    type= response.info()['content-type']
+    if type:
+        for s in stream:
+            if s in type: return False, "Is a stream"
+
+    try:
+        content = response.read()
+        response.close()
+    except Exception as e:
+        return False, str(e)
 
     m = hashlib.md5(content).hexdigest()
 
@@ -367,7 +368,7 @@ def main():
     for i in range(options.THREADS):
         threading.Thread(target=process_inq, args=(inq, options.website, options.timeout, options.ignore,MD5_SUM,page_snippet)).start()
 
-    status(options.QUEUE_SIZE,get_number_lines(options.masscan_results)+1)
+    status(options.QUEUE_SIZE,get_number_lines(options.masscan_results))
 
 if __name__ == '__main__':
     main()
