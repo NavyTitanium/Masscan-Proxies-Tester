@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import urllib.request
 from urllib import request as urlrequest
 from urllib.error import URLError
 import urllib.error
@@ -214,9 +213,11 @@ def test_proxy(proxy, website, TIMEOUT, ignore,MD5_SUM,page_snippet):
 
     type= response.info()['content-type']
     if type:
-        stream = ['audio', 'mpeg', 'video', 'stream', 'accp']
+        stream = ['audio', 'mpeg', 'video', 'stream', 'accp','x-mixed-replace']
         for s in stream:
-            if s in type: return False, "Is a stream"
+            if s in type:
+                response.close()
+                return False, "Is a stream"
 
     try:
         content = response.read()
