@@ -1,0 +1,5 @@
+SELECT inet_ntoa(ipv4),port,date_tested,reason FROM proxy.proxies where reason like '1%';
+SELECT inet_ntoa(ipv4),port,date_tested,reason FROM proxy.proxies where reason like '3%';
+SELECT inet_ntoa(ipv4),port,date_tested,reason FROM proxy.proxies where reason like '5%';
+SELECT inet_ntoa(ipv4),port,date_tested,reason FROM proxy.proxies where reason like '407%';
+SELECT inet_ntoa(ipv4),port,date_tested,reason FROM proxy.proxies where reason = '200 Integrity check OK';
